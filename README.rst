@@ -51,4 +51,5 @@ The result is a dict which contains:
 3. author
 4. pubdate
 5. tags
-5. categories
+6. categories
+7. image
