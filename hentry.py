@@ -30,23 +30,23 @@ __all__ = ['parse_url', 'parse_html', 'to_datetime', 'uri_id', 'HentryError']
 
 
 UA = 'Mozilla/5.0 (compatible; Hentry)'
-sel = {}
-_keys = (
-    # hentry
-    '.hentry', '.entry-title', '.entry-content',
-    'time.updated', 'time.published',
-    '[rel=tag]', '.vcard .fn', '.author .fn',
-
-    # fetch extra data
-    '.entry', '.title', '.content', 'time',
-    '.tag', '.category', '.author',
-
-    # uuid
-    'meta[name="entry-id"]',
-)
 # pre-compile css selector
-for key in _keys:
-    sel[key] = CSSSelector(key)
+_sel_entry = [CSSSelector('.hentry'), CSSSelector('.entry')]
+_sel_title = [CSSSelector('.entry-title'), CSSSelector('.title')]
+_sel_content = [CSSSelector('.entry-content'), CSSSelector('.content')]
+_sel_author = [
+    CSSSelector('.vcard .fn'),
+    CSSSelector('.author .fn'),
+    CSSSelector('.author'),
+]
+_sel_tag = [CSSSelector('[rel=tag]'), CSSSelector('.tag')]
+_sel_date = [
+    CSSSelector('time.published'),
+    CSSSelector('time.updated'),
+    CSSSelector('time'),
+]
+_sel_cat = CSSSelector('.category')
+_sel_id = CSSSelector('meta[name="entry-id"]')
 
 
 class HentryError(Exception):
@@ -92,10 +92,10 @@ def parse_url(url, format='text', user_agent=None):
 
 def parse_html(html, format='text'):
     el = fromstring(html)
-    rv = _find(el, '.hentry', '.entry')
+    rv = _find(el, *_sel_entry)
     if rv and len(rv) == 1:
         entry = _parse_entry(rv[0], format)
-        rv = _find(el, 'meta[name="entry-id"]')
+        rv = _sel_id(el)
         if rv:
             entry['id'] = rv[0].get('content', '').strip()
         return entry
@@ -104,35 +104,35 @@ def parse_html(html, format='text'):
 
 def _parse_entry(el, format='text'):
     entry = {
-        'title': _text(el, '.entry-title', '.title'),
-        'author': _text(el, '.vcard .fn', '.author .fn', '.author'),
+        'title': _text(el, *_sel_title),
+        'author': _text(el, *_sel_author),
     }
     if format == 'html':
-        rv  = _find(el, '.entry-content', '.content')
+        rv  = _find(el, *_sel_content)
         if rv:
             entry['content'] = tostring(rv[0], encoding='unicode')
     else:
-        entry['content'] = _text(el, '.entry-content', '.content')
+        entry['content'] = _text(el, *_sel_content)
 
     # pubdate
-    rv = _find(el, 'time.updated', 'time.published', 'time')
+    rv = _find(el, *_sel_date)
     if rv:
         entry['pubdate'] = to_datetime(rv[0].get('datetime'))
 
     # tags
-    rv = _find(el, '[rel=tag]', '.tag')
+    rv = _find(el, *_sel_tag)
     if rv:
         entry['tags'] = map(lambda o: o.text_content(), rv)
 
-    rv = _find(el, '.category')
+    rv = _sel_cat(el)
     if rv:
         entry['categories'] = map(lambda o: o.text_content(), rv)
     return entry
 
 
 def _find(el, *args):
-    for arg in args:
-        rv = sel[arg](el)
+    for sel in args:
+        rv = sel(el)
         if rv:
             return rv
     return None
