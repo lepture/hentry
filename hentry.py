@@ -45,6 +45,10 @@ _sel_date = [
     CSSSelector('time.updated'),
     CSSSelector('time'),
 ]
+_sel_image = [
+    CSSSelector('meta[property="og:image"]'),
+    CSSSelector('meta[name="twitter:image"]'),
+]
 _sel_cat = CSSSelector('.category')
 _sel_id = CSSSelector('meta[name="entry-id"]')
 
@@ -98,6 +102,9 @@ def parse_html(html, format='text'):
         rv = _sel_id(el)
         if rv:
             entry['id'] = rv[0].get('content', '').strip()
+        rv = _find(el, *_sel_image)
+        if rv:
+            entry['image'] = rv[0].get('content', '').strip()
         return entry
     return None
 
