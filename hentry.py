@@ -7,6 +7,8 @@
     Parse entry with standard class names.
 
     http://microformats.org/wiki/hentry
+
+    :copyright: (c) 2014 by Hsiaoming Yang
 """
 
 import time
@@ -21,7 +23,11 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-__all__ = ('parse_url', 'parse_html', 'to_datetime', 'uri_id')
+__version__ = '0.1'
+__author__ = 'Hsiaoming Yang <me@lepture.com>'
+
+__all__ = ['parse_url', 'parse_html', 'to_datetime', 'uri_id', 'HentryError']
+
 
 UA = 'Mozilla/5.0 (compatible; Hentry)'
 sel = {}
@@ -43,6 +49,29 @@ for key in _keys:
     sel[key] = CSSSelector(key)
 
 
+class HentryError(Exception):
+    pass
+
+
+def to_datetime(value):
+    if not value:
+        return None
+    value = value.strip()
+    try:
+        date = dateutil.parser.parse(value)
+        if not date:
+            return None
+        return datetime.fromtimestamp(time.mktime(date.utctimetuple()))
+    except:
+        return None
+
+
+def uri_id(url):
+    ident = urlparse(url)
+    uid = base64.urlsafe_b64encode(ident.path.lstrip('/'))
+    return uid.rstrip('=')
+
+
 def parse_url(url, format='text', user_agent=None):
     if not user_agent:
         user_agent = UA
@@ -50,11 +79,10 @@ def parse_url(url, format='text', user_agent=None):
     req = requests.get(url, timeout=5, headers={
         'User-Agent': user_agent,
     })
-    # TODO
     if req.status_code != 200:
-        raise
+        raise HentryError('Request Error')
     if not req.content:
-        raise
+        raise HentryError('No Content')
 
     entry = parse_html(req.content, format)
     if 'id' not in entry:
@@ -115,22 +143,3 @@ def _text(el, *args):
     if rv:
         return rv[0].text_content().strip()
     return None
-
-
-def to_datetime(value):
-    if not value:
-        return None
-    value = value.strip()
-    try:
-        date = dateutil.parser.parse(value)
-        if not date:
-            return None
-        return datetime.fromtimestamp(time.mktime(date.utctimetuple()))
-    except:
-        return None
-
-
-def uri_id(url):
-    ident = urlparse(url)
-    uid = base64.urlsafe_b64encode(ident.path.lstrip('/'))
-    return uid.rstrip('=')
