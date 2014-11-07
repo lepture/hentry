@@ -76,7 +76,7 @@ def uri_id(url):
     return uid.rstrip('=')
 
 
-def parse_url(url, format='text', user_agent=None):
+def parse_url(url, format=None, user_agent=None):
     if not user_agent:
         user_agent = UA
 
@@ -94,7 +94,7 @@ def parse_url(url, format='text', user_agent=None):
     return entry
 
 
-def parse_html(html, format='text'):
+def parse_html(html, format=None):
     el = fromstring(html)
     rv = _find(el, *_sel_entry)
     if rv and len(rv) == 1:
@@ -109,7 +109,7 @@ def parse_html(html, format='text'):
     return None
 
 
-def _parse_entry(el, format='text'):
+def _parse_entry(el, format=None):
     entry = {
         'title': _text(el, *_sel_title),
         'author': _text(el, *_sel_author),
