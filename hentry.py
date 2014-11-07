@@ -133,7 +133,7 @@ def _parse_entry(el, format=None):
     entry = {'title': title}
 
     if format == 'html':
-        rv  = _find(el, *_sel_content)
+        rv = _find(el, *_sel_content)
         if rv:
             entry['content'] = tostring(rv[0], encoding='unicode')
     else:

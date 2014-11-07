@@ -29,3 +29,22 @@ def test_cases():
 
     for name in names:
         yield compare, name
+
+
+def test_invalid():
+    filepath = os.path.join(folder, 'non-entry.html')
+    with open(filepath) as f:
+        parsed = hentry.parse_html(f.read())
+        assert parsed is None
+
+    filepath = os.path.join(folder, 'non-title.html')
+    with open(filepath) as f:
+        parsed = hentry.parse_html(f.read())
+        assert parsed is None
+
+
+def test_to_datetime():
+    # no value
+    assert hentry.to_datetime(None) is None
+    # invalid value
+    assert hentry.to_datetime('foobar') is None
