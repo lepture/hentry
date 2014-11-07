@@ -151,11 +151,11 @@ def _parse_entry(el, format=None):
     # tags
     rv = _find(el, *_sel_tag)
     if rv:
-        entry['tags'] = map(lambda o: o.text_content(), rv)
+        entry['tags'] = list(map(lambda o: o.text_content(), rv))
 
     rv = _sel_cat(el)
     if rv:
-        entry['categories'] = map(lambda o: o.text_content(), rv)
+        entry['categories'] = list(map(lambda o: o.text_content(), rv))
     return entry
 
 
