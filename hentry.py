@@ -125,16 +125,23 @@ def parse_html(html, format=None):
 
 
 def _parse_entry(el, format=None):
-    entry = {
-        'title': _text(el, *_sel_title),
-        'author': _text(el, *_sel_author),
-    }
+    title = _text(el, *_sel_title)
+    # title is required
+    if not title:
+        return None
+
+    entry = {'title': title}
+
     if format == 'html':
         rv  = _find(el, *_sel_content)
         if rv:
             entry['content'] = tostring(rv[0], encoding='unicode')
     else:
         entry['content'] = _text(el, *_sel_content)
+
+    author = _text(el, *_sel_author)
+    if author:
+        entry['author'] = author
 
     # pubdate
     rv = _find(el, *_sel_date)
