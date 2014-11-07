@@ -58,6 +58,7 @@ class HentryError(Exception):
 
 
 def to_datetime(value):
+    """Parse a text string into datetime."""
     if not value:
         return None
     value = value.strip()
@@ -71,12 +72,19 @@ def to_datetime(value):
 
 
 def uri_id(url):
+    """Make a unique ID from URL."""
     ident = urlparse(url)
     uid = base64.urlsafe_b64encode(ident.path.lstrip('/'))
     return uid.rstrip('=')
 
 
 def parse_url(url, format=None, user_agent=None):
+    """Parse hentry from a URL.
+
+    :param url: URL of an article webpage
+    :param format: content format, default is text, other option is html
+    :param user_agent: HTTP user_agent header
+    """
     if not user_agent:
         user_agent = UA
 
@@ -89,12 +97,19 @@ def parse_url(url, format=None, user_agent=None):
         raise HentryError('No Content')
 
     entry = parse_html(req.content, format)
+    if not entry:
+        return None
     if 'id' not in entry:
         entry['id'] = uri_id(url)
     return entry
 
 
 def parse_html(html, format=None):
+    """Parse hentry micrformats from a given html string.
+
+    :param html: html string of an article webpage
+    :param format: content format, default is text, other option is html
+    """
     el = fromstring(html)
     rv = _find(el, *_sel_entry)
     if rv and len(rv) == 1:
