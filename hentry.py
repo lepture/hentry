@@ -26,7 +26,10 @@ except ImportError:
 __version__ = '0.1'
 __author__ = 'Hsiaoming Yang <me@lepture.com>'
 
-__all__ = ['parse_url', 'parse_html', 'to_datetime', 'uri_id', 'HentryError']
+__all__ = [
+    'parse_url', 'parse_html', 'parse_entry', 'parse_meta',
+    'to_datetime', 'uri_id', 'HentryError',
+]
 
 
 UA = 'Mozilla/5.0 (compatible; Hentry)'
@@ -45,12 +48,24 @@ _sel_date = [
     CSSSelector('time.updated'),
     CSSSelector('time'),
 ]
-_sel_image = [
-    CSSSelector('meta[property="og:image"]'),
-    CSSSelector('meta[name="twitter:image"]'),
-]
 _sel_cat = CSSSelector('.category')
-_sel_id = CSSSelector('meta[name="entry-id"]')
+
+_sel_meta = {
+    'image': [
+        CSSSelector('meta[property="og:image"]'),
+        CSSSelector('meta[name="twitter:image"]'),
+    ],
+    'title': [
+        CSSSelector('meta[property="og:title"]'),
+        CSSSelector('meta[name="twitter:title"]'),
+    ],
+    'description': [
+        CSSSelector('meta[property="og:description"]'),
+        CSSSelector('meta[name="twitter:description"]'),
+        CSSSelector('meta[name="description"]'),
+    ],
+    'id': CSSSelector('meta[name="entry-id"]'),
+}
 
 
 class HentryError(Exception):
@@ -111,20 +126,25 @@ def parse_html(html, format=None):
     :param format: content format, default is text, other option is html
     """
     el = fromstring(html)
+    meta = parse_meta(el)
     rv = _find(el, *_sel_entry)
     if rv and len(rv) == 1:
-        entry = _parse_entry(rv[0], format)
-        rv = _sel_id(el)
-        if rv:
-            entry['id'] = rv[0].get('content', '').strip()
-        rv = _find(el, *_sel_image)
-        if rv:
-            entry['image'] = rv[0].get('content', '').strip()
+        entry = parse_entry(rv[0], format)
+        entry.update(meta)
         return entry
-    return None
+    return meta
 
 
-def _parse_entry(el, format=None):
+def parse_meta(el):
+    meta = {}
+    for key in _sel_meta:
+        rv = _find(el, *_sel_meta[key])
+        if rv:
+            meta[key] = rv[0].get('content', '').strip()
+    return meta
+
+
+def parse_entry(el, format=None):
     title = _text(el, *_sel_title)
     # title is required
     if not title:
